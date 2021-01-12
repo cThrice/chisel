@@ -136,6 +136,8 @@ var serverHelp = `
     chisel receives a normal HTTP request. Useful for hiding chisel in
     plain sight.
 
+    --match-domain, Set the domain used in OU matching
+
     --socks5, Allow clients to access the internal SOCKS5 proxy. See
     chisel client --help for more information.
 
@@ -175,6 +177,7 @@ func server(args []string) {
 	flags.DurationVar(&config.KeepAlive, "keepalive", 25*time.Second, "")
 	flags.StringVar(&config.Proxy, "proxy", "", "")
 	flags.StringVar(&config.Proxy, "backend", "", "")
+	flags.StringVar(&config.MatchDomain, "match-domain", "localhost", "")
 	flags.BoolVar(&config.Socks5, "socks5", false, "")
 	flags.BoolVar(&config.Reverse, "reverse", false, "")
 	flags.StringVar(&config.TLS.Key, "tls-key", "", "")

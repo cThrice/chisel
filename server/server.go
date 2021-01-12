@@ -26,6 +26,7 @@ type Config struct {
 	AuthFile  string
 	Auth      string
 	Proxy     string
+  MatchDomain string
 	Socks5    bool
 	Reverse   bool
 	KeepAlive time.Duration

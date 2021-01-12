@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+	"regexp"
 
 	chshare "github.com/jpillora/chisel/share"
 	"github.com/jpillora/chisel/share/cnet"
@@ -16,6 +17,11 @@ import (
 
 // handleClientHandler is the main http websocket handler for the chisel server
 func (s *Server) handleClientHandler(w http.ResponseWriter, r *http.Request) {
+	//this maybe should be a function all to collect and return available metadata
+	//should also be in some persistent object
+	connectingIp := r.Header.Get("Cf-Connecting-Ip")
+	extra := r.Header.Get("X-CERT-SUBJECT-DN")
+	s.Infof("Connection initated by - %s - %s", connectingIp, extra)
 	//websockets upgrade AND has chisel prefix
 	upgrade := strings.ToLower(r.Header.Get("Upgrade"))
 	protocol := r.Header.Get("Sec-WebSocket-Protocol")
@@ -115,9 +121,21 @@ func (s *Server) handleWebsocket(w http.ResponseWriter, req *http.Request) {
 		//access to the desired remotes
 		if user != nil {
 			addr := r.UserAddr()
-			if !user.HasAccess(addr) {
+			l.Infof("addr - %s",addr)
+			// This should utilize extra values stored in the object
+			// Should also allow for some map between a provided list of Headers
+			// and regex matches. 
+			subjectDN := req.Header.Get("X-CERT-SUBJECT-DN")
+			reg := regexp.MustCompile(`.*OU=(?P<orgunit>\w*)`)
+			regResult := reg.FindStringSubmatch(subjectDN)
+			matchPattern := `^` + regResult[1] + s.config.MatchDomain + `:[0-9]*`
+			matched, _ := regexp.MatchString(matchPattern, addr)
+			if ( !matched && !user.HasAccess(addr)) {
 				failed(s.Errorf("access to '%s' denied", addr))
 				return
+			}
+			if matched {
+				s.Infof("Allowed Addr - %s - Reason: Passed regex - %s", addr, matchPattern)
 			}
 		}
 		//confirm reverse tunnels are allowed
